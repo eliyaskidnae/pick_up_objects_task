@@ -1,0 +1,29 @@
+digraph pastafarianism {
+ordering=out;
+graph [fontname="times-roman"];
+node [fontname="times-roman"];
+edge [fontname="times-roman"];
+"Pick and Place" [fillcolor=orange, fontcolor=black, fontsize=9, label="Ⓜ Pick and Place", shape=box, style=filled];
+inv_check_explo [fillcolor=ghostwhite, fontcolor=black, fontsize=9, label=inv_check_explo, shape=ellipse, style=filled];
+"Pick and Place" -> inv_check_explo;
+explore_finish [fillcolor=gray, fontcolor=black, fontsize=9, label=explore_finish, shape=ellipse, style=filled];
+inv_check_explo -> explore_finish;
+Explore_Selec [fillcolor=cyan, fontcolor=black, fontsize=9, label="Ⓜ Explore_Selec", shape=octagon, style=filled];
+"Pick and Place" -> Explore_Selec;
+explore_list [fillcolor=gray, fontcolor=black, fontsize=9, label=explore_list, shape=ellipse, style=filled];
+Explore_Selec -> explore_list;
+set_explo_always_fails [fillcolor=gray, fontcolor=black, fontsize=9, label=set_explo_always_fails, shape=ellipse, style=filled];
+Explore_Selec -> set_explo_always_fails;
+path_follower [fillcolor=gray, fontcolor=black, fontsize=9, label=path_follower, shape=ellipse, style=filled];
+"Pick and Place" -> path_follower;
+check_object [fillcolor=gray, fontcolor=black, fontsize=9, label=check_object, shape=ellipse, style=filled];
+"Pick and Place" -> check_object;
+retry_grap_obje [fillcolor=ghostwhite, fontcolor=black, fontsize=9, label=retry_grap_obje, shape=ellipse, style=filled];
+"Pick and Place" -> retry_grap_obje;
+get_object [fillcolor=gray, fontcolor=black, fontsize=9, label=get_object, shape=ellipse, style=filled];
+retry_grap_obje -> get_object;
+"path_follower*" [fillcolor=gray, fontcolor=black, fontsize=9, label="path_follower*", shape=ellipse, style=filled];
+"Pick and Place" -> "path_follower*";
+let_object [fillcolor=gray, fontcolor=black, fontsize=9, label=let_object, shape=ellipse, style=filled];
+"Pick and Place" -> let_object;
+}

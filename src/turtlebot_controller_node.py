@@ -23,7 +23,7 @@ def move_to_point(current, goal, Kv=0.5, Kw=0.5):
     theta_d = np.arctan2(goal[1] - current[1], goal[0] - current[0])
     w = Kw * wrap_angle(theta_d - current[2])
     v = 0
-    if abs(w) < 0.05: # to avoid move while turning
+    if abs(w) < 0.5: # to avoid move while turning
         v = Kv * np.linalg.norm(goal - current[0:2])
     return v, w
 
@@ -85,6 +85,7 @@ class Controller:
                     print("Final position reached!")
             else:
                 v, w = move_to_point(self.current_pose, self.path[0], self.Kv, self.Kw)
+                print("v: {}, w: {}".format(v, w))
         self.__send_commnd__(v, w)
     
 
