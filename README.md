@@ -1,99 +1,85 @@
-# Define a "Pickup objects" task using behavior trees
+# Online Path Planner lab1
 
-This lab uses the turtlebot3 simulator in ROS noetic Gazebo to complete an object collecting task making use of the [py_trees](https://github.com/splintered-reality/py_trees) library.
+### Group Members 
+   1. Eliyas Kidanemariam Abraha - u1992469
+   2. Goitom Leaku  u1985499
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Implementation](#features)
+3. [Usage](#usage)
+4. [Demo Video](#demo)
+
+## Introduction
 
 
-## `py_trees` library
-
-This lab uses the [py_trees](https://github.com/splintered-reality/py_trees) library.
-To install the `py_trees` library do:
-
-```bash
-pip install py_trees
-```
-
-You can find information about how to use this library at this [github page](https://github.com/splintered-reality/py_trees).
-
-There is also a [tutorial](./notebooks/py_tree_tests.ipynb) included in this package. Check it for a brief introduction.
-
-## Task description
-
+## Implementation 
 We have a robot with the follwong behaviors:
 
-* `move`: The robot move to the *x*, *y* location. This behavior is provided by the node [turtlebot_controller_node.py](./src/turtlebot_controller_node.py) from this package. 
+* `check_exploration_Done`: This behaviour checks blackboard variable [`exploration_done`] if the blackboard variable is true it returns sucess which means exploration is finished when two objects have been collected or all provided points have been explored. Otherwise it rereturns failure.This beihaviour is then Inverted using Invertion decorator to stop the excusion exploration is done.
+* `explore`: This behaviour check if the 2 objects(coke_can and beer are collected) or all listed places are explored.If Two objected are not collected and there are more points to explore it writes the next `waypoint or goal` to blackboard  and published goal point to the planner then returns `Sucess`. Otherwise returns `Failure`.
+* `plan and follow path`: In this behaviour the robot plans a path to the goal point and checks if it reaches the goal point with minimum threshold dstance.It returns `Running` when it is planning and following the path.When the the robot reaches the goal point it returns `Sucess`.This  behaviour is also checked by timeout decoretor to return `Failure` if after some timeout time of palnning. We consider if the robot is not reached the goal point after specfied time there is no valid path to the goal point retrn `Failure`
+
+
 * `check_object`: A service provided by the [manage_objects_node.py](./src/manage_objects_node.py). It returns `False` if no object is close to the robot and `True` plus the object's name if an object is close to it.
 * `get_object`: A service provided by the [manage_objects_node.py](./src/manage_objects_node.py). It returns `False` if no object is close to the robot and `True` if an object is close to it. It also moves this object over the robot.
 * `let_object`: A service provided by the [manage_objects_node.py](./src/manage_objects_node.py). It returns `False` if no object is over the robot and `True` if an object is over it. It also moves this object to the floor.
 
+### path planning controller 
 
-Using these behaviors, you have to implement the following task.
-
-The robot has to navigate to a list of points and in each one it has to check if there is an object on it. If there is an object, it picks it up and takes it to `(-1.5, -1.5)` if the object was a `beer` can or to `(1.5, 1.5)` if the object was a `coke` can. Once there, the robot leaves the object and goes to the next point. The task ends once two objects have been collected or all provided points have been explored. The points where the objects can be found are:
-
-* (1.25, 0.5)
-* (1.25, -1.25)
-* (0.0, -1.25)
-* (-0.5, 1.25)
-* (-1.25, 0.5)
-
-An execution example can be found [here](http://eia.udg.edu/~npalomer/imgs/robotica/BT.mp4). 
-
-> Notice that in the video a task planning node is used instead of a simple controller as the one provided in this package.
-
-<p align="center"> <img src="./media/env.png" width=400px/> </p>
-
-### Included code
-
-Three code files are included: `turtlebot_controller_node.py`, `manage_objects_node.py` and `pickup_behaviors_no.py`:
-
-* `turtlebot_controller_node.py`: This file is a ROS node that contains a basic *move to point* controller. When a `PoseStamped` message is published to the topic `/move_base_simple/goal`, this controller moves the turtlebot to this position.
-* `manage_objects.py`: This file is a ROS node that contain the following ROS services:
-    * `check_object`
-    * `get_object`
-    * `let_object`
-* `pickup_behaviors.py`: Contains 3 behaviors ready to be called from the `py_trees` library. Modify this file to add the necessary additional behaviors.
-    * `CheckObject`: Behavior for calling `check_object` task and if True, store object name to Blackboard
-    * `GetObject`: Behavior for calling `get_object`
-    * `LetObject`: Behavior for calling `let_object`
-
-Additionally, a launch file named `pick_up_objects_task.launch` is also included. Launch it and run the `pickup_behaviors.py` node to play the behavior tree that executes the autonomous task.
+In Order to do pick and place task while avoiding obstacles we incorporate the previously done RRT-Star planner. We reduce the dominion area to [-5 ,5,-5,5] beacause it is small area and we are using RRT Star to get shorter path.We implement both palanning and follow path at one behaviour and bound it by time out to return `Failure` if path is not found with in specified  time.
+In the state validity  checker we define the locations of coke_can and beer as special places.The State Validity checker returns `True` if those special points are come as `goal point` from    `path-cheker` but we consider them as normal point when they are not goal points. 
 
 
-## Work to be done
+### Problems found.
 
-Define a behavior tree to complete the task at hand. Once the behavior tree is being approved by your lab assistant, implement it using ROS and `py_trees`. Despite there is a `py_trees` implementation for ROS1, here, we propose you to use the standard `py_trees` library and add by hand any necessary call to ROS services, publishers or subscribers. However, feel free to use whatever package is more convininent for you.
+#### Lidar Obstacle detection Problem 
 
-## Extra bonus
+The Problem we encouter is the coke_can is too small to detect by the lidar while the beer is detected as obstacle.The Planner takes as a valid point the area around the coke and plannes a path through it and the robot stacks with the beer. We try to change  the coke model or modifie the size in the `sdf` file but it does not work.Another solution could be saving the coke location as global point when the location is randomly generated and consider it as obstcle but it is adding complexity to the program.
 
-You can override the `turtlebot_controller_node.py` by the path planning controller that you developed in the first lab. If you do that, you should be able to execute the task in the `turtlebot3_stage_3.world`. Modify the launch file [turtlebot3_stage.launch](./launch/turtlebot3_stage.launch) to include this world.
+<div style="display: flex; justify-content: center;">
+    <div style="flex: 1; margin-right: 5px;">
+        <img src="./media/berr_lidar.png" alt="Figure 1" width="500" height="300" />
+        <p style="text-align: center;">Figure 1: Beer Lidar Detection </p>
+    </div>
+    <div style="flex: 1; margin-right: 5px;">
+        <img src="./media/cock_lidar.png" alt="Figure 2" width="500" height="300"/>
+        <p style="text-align: center;">Figure 2: coke_can Lidar Detection </p>
+    </div>
+</div>
 
 
-## Deliverable 
+This someimes doesnot work if the robot bounded inside to obstacles.
+![Example GIF](./imgs/backup2.gif)
 
-Deliver a zip file containing these package completed. For the [pick_up_objects_task](https://github.com/narcispr/pick_up_objects_task) package replace or complete the current `README.md` file with:
 
-* The name of all group members (max. 2)
-* If it is required to install some package, detailed instructions of how to do it.
-* Detailed instructions of how to execute the task (i.e., launch file, rosrun nodes, ...).
-* A figure of the behavior tree you have implemented.
-* An explanation of the behavior tree used and how each behavior have been implemented.
-* A video of the task execution.
-* Problems found.
-* Conclusions
+## Remark 
 
----
+![Example GIF](./imgs/difficultiy.gif)
 
-## WARNING:
+## Usage
+ to run the pick and place run the following commands 
+  ```sh
+  # to run the basic(stage 1)
+  roslaunch pick_up_objects_task pick_up_objects_task_basic.launch
+  roslaunch rosrun  pick_up_objects_task pickup_behaviors_node.py 
+  ```
+  to run the  pick and place with planner run the follow command(bonus)
+ ```sh
+  
+  # to run the second stage
+  roslaunch pick_up_objects_task pick_up_objects_task_planning.launch
+  roslaunch rosrun  pick_up_objects_task pickup_behaviors_node.py 
+  ```
+  ###  Demo 1
+Watch a demo of our project in action:
+Demo1 
+<video width="640" height="360" controls>
+  <source src="./media/planning.mp4" type="video/mp4">
+</video>
 
-We encourage you to help or ask your classmates for help, but the direct copy of a lab will result in a failure (with a grade of 0) for all the students involved. 
 
-It is possible to use functions or parts of code found on the internet only if they are limited to a few lines and correctly cited (a comment with a link to where the code was taken from must be included). 
 
-**Deliberately copying entire or almost entire works will not only result in the failure of the laboratory but may lead to a failure of the entire course or even to disciplinary action such as temporal or permanent expulsion of the university.** [Rules of the evaluation and grading process for UdG students.](https://tinyurl.com/54jcp2vb)
 
----
 
-<sup>
-Narcis Palomeras - 
-Last review March 2024.
-</sup>
+
